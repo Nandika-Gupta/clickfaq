@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, X, ChevronDown, ChevronUp, Star, BarChart3 } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { FAQCard } from '../components/faq/FAQCard';
 import { CategoryFilter } from '../components/faq/CategoryFilter';
@@ -10,6 +10,8 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useFAQTranslation } from '../hooks/useFAQTranslation';
 import { computeHeatmapLevels } from '../services/engagement';
+import { getBookmarks } from '../services/bookmarks';
+import { AnalyticsDashboard } from '../components/faq/AnalyticsDashboard';
 import faqData from '../data/faqs.json';
 import type { FAQ, FAQDataset } from '../types';
 
@@ -20,6 +22,9 @@ export default function FAQPage() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [bookmarks, setBookmarks] = useState<string[]>(() => getBookmarks());
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   const allFaqs = data.faqs as FAQ[];
 
@@ -27,6 +32,9 @@ export default function FAQPage() {
     let result = allFaqs;
     if (selectedCategory) {
       result = result.filter((f) => f.categoryId === selectedCategory);
+    }
+    if (showBookmarksOnly) {
+      result = result.filter((f) => bookmarks.includes(f.id));
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -38,7 +46,7 @@ export default function FAQPage() {
       );
     }
     return result;
-  }, [allFaqs, selectedCategory, search]);
+  }, [allFaqs, selectedCategory, search, showBookmarksOnly, bookmarks]);
 
   const translations = useFAQTranslation(filteredFaqs, language, setIsTranslating);
 
@@ -128,6 +136,23 @@ export default function FAQPage() {
           <HeatmapLegend />
           <div className="flex gap-2">
             <button
+              onClick={() => setIsAnalyticsOpen(true)}
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/40 transition-colors border border-transparent hover:bg-white/5 hover:text-white cursor-pointer"
+            >
+              <BarChart3 size={14} /> Analytics
+            </button>
+            <button
+              onClick={() => setShowBookmarksOnly((prev) => !prev)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors border ${
+                showBookmarksOnly
+                  ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                  : 'text-white/40 border-transparent hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Star size={14} className={showBookmarksOnly ? 'fill-yellow-400' : ''} />
+              Bookmarked ({bookmarks.length})
+            </button>
+            <button
               onClick={expandAll}
               className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/5 hover:text-white"
             >
@@ -168,6 +193,7 @@ export default function FAQPage() {
                 heatmapLevel={heatmapLevels[faq.id] ?? 'green'}
                 isExpanded={expandedIds.has(faq.id)}
                 onToggle={() => toggleExpand(faq.id)}
+                onBookmarkToggle={() => setBookmarks(getBookmarks())}
               />
             );
           })}
@@ -191,6 +217,13 @@ export default function FAQPage() {
           <UnansweredSection searchQuery={search} />
         </div>
       </div>
+
+      <AnalyticsDashboard
+        isOpen={isAnalyticsOpen}
+        onClose={() => setIsAnalyticsOpen(false)}
+        faqs={allFaqs}
+        categories={data.categories}
+      />
     </div>
   );
 }

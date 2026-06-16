@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Eye, MousePointer, Expand } from 'lucide-react';
+import { ChevronDown, Eye, MousePointer, Expand, Star } from 'lucide-react';
 import type { FAQ, HeatmapLevel } from '../../types';
 import {
   trackView,
@@ -9,6 +9,7 @@ import {
   getEngagement,
   HEATMAP_COLORS,
 } from '../../services/engagement';
+import { isBookmarked as checkBookmarked, toggleBookmark } from '../../services/bookmarks';
 
 interface FAQCardProps {
   faq: FAQ;
@@ -17,6 +18,7 @@ interface FAQCardProps {
   heatmapLevel: HeatmapLevel;
   isExpanded: boolean;
   onToggle: () => void;
+  onBookmarkToggle?: () => void;
 }
 
 export function FAQCard({
@@ -26,11 +28,14 @@ export function FAQCard({
   heatmapLevel,
   isExpanded,
   onToggle,
+  onBookmarkToggle,
 }: FAQCardProps) {
   const [engagement, setEngagement] = useState(getEngagement(faq.id));
+  const [bookmarked, setBookmarked] = useState(() => checkBookmarked(faq.id));
 
   useEffect(() => {
     setEngagement(trackView(faq.id));
+    setBookmarked(checkBookmarked(faq.id));
   }, [faq.id]);
 
   const handleToggle = () => {
@@ -39,6 +44,13 @@ export function FAQCard({
       setEngagement(trackExpansion(faq.id));
     }
     onToggle();
+  };
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const status = toggleBookmark(faq.id);
+    setBookmarked(status);
+    onBookmarkToggle?.();
   };
 
   const borderColor = HEATMAP_COLORS[heatmapLevel];
@@ -54,10 +66,9 @@ export function FAQCard({
         boxShadow: `0 0 0 1px ${borderColor}22`,
       }}
     >
-      <button
+      <div
         onClick={handleToggle}
-        className="flex w-full items-start justify-between gap-4 p-5 text-left transition-colors hover:bg-white/[0.02]"
-        aria-expanded={isExpanded}
+        className="flex w-full cursor-pointer select-none items-start justify-between gap-4 p-5 text-left transition-colors hover:bg-white/[0.02]"
       >
         <div className="flex-1 space-y-1">
           <span className="text-xs font-medium text-white/30">{faq.number}</span>
@@ -65,14 +76,24 @@ export function FAQCard({
             {question}
           </h3>
         </div>
-        <motion.div
-          animate={{ rotate: isExpanded ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-          className="mt-1 shrink-0"
-        >
-          <ChevronDown size={20} className="text-white/40" />
-        </motion.div>
-      </button>
+        <div className="mt-1 flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleBookmark}
+            className={`rounded-lg p-1.5 transition-colors hover:bg-white/10 ${
+              bookmarked ? 'text-yellow-400' : 'text-white/30 hover:text-white/60'
+            }`}
+            aria-label={bookmarked ? 'Remove from bookmarks' : 'Bookmark FAQ'}
+          >
+            <Star size={16} className={bookmarked ? 'fill-yellow-400' : ''} />
+          </button>
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronDown size={20} className="text-white/40" />
+          </motion.div>
+        </div>
+      </div>
 
       <AnimatePresence>
         {isExpanded && (

@@ -31,6 +31,20 @@ export function getFeedback(): Feedback[] {
   return getItem<Feedback[]>(FEEDBACK_KEY, []);
 }
 
+export function updateTicketStatus(
+  ticketId: string,
+  status: 'open' | 'in-progress' | 'resolved'
+): Ticket | null {
+  const tickets = getTickets();
+  const index = tickets.findIndex((t) => t.id === ticketId);
+  if (index > -1) {
+    tickets[index].status = status;
+    setItem(TICKETS_KEY, tickets);
+    return tickets[index];
+  }
+  return null;
+}
+
 export function submitFeedback(
   data: Omit<Feedback, 'id' | 'createdAt'>
 ): Feedback {
