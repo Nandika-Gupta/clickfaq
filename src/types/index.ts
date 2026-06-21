@@ -26,11 +26,8 @@ export interface FAQDataset {
 export type SupportedLanguage =
   | 'en'
   | 'hi'
-  | 'fr'
-  | 'de'
-  | 'es'
-  | 'zh'
-  | 'ja';
+  | 'Punjabi'
+  | 'Tamil';
 
 export interface LanguageOption {
   code: SupportedLanguage;

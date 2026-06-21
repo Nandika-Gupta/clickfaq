@@ -9,14 +9,11 @@ import {
 import type { LanguageOption, SupportedLanguage } from '../types';
 import { getItem, setItem } from '../services/storage';
 
-export const LANGUAGES: LanguageOption[] = [
-  { code: 'en', label: 'English', nativeLabel: 'English' },
-  { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
-  { code: 'fr', label: 'French', nativeLabel: 'Français' },
-  { code: 'de', label: 'German', nativeLabel: 'Deutsch' },
-  { code: 'es', label: 'Spanish', nativeLabel: 'Español' },
-  { code: 'zh', label: 'Chinese', nativeLabel: '中文' },
-  { code: 'ja', label: 'Japanese', nativeLabel: '日本語' },
+export const LANGUAGES = [
+  { code: "en", label: "English", nativeLabel: "English" },
+  { code: "hi", label: "Hindi", nativeLabel: "हिन्दी" },
+  { code: "pa", label: "Punjabi", nativeLabel: "ਪੰਜਾਬੀ" },
+  { code: "ta", label: "Tamil", nativeLabel: "தமிழ்" },
 ];
 
 interface LanguageContextValue {

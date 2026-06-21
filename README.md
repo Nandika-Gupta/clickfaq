@@ -10,6 +10,7 @@ A modern FAQ Management Platform built with React, TypeScript, Tailwind CSS, Rea
 - **FAQ Heatmap** — Engagement tracking with color-coded borders (green → red)
 - **Unanswered Questions** — Submit questions not found in the FAQ
 - **Raise Ticket & Feedback** — Support tickets with auto-generated IDs and star ratings
+- **Rosetta Journal**
 
 ## Getting Started
 

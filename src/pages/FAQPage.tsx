@@ -8,17 +8,25 @@ import { UnansweredSection } from '../components/faq/UnansweredSection';
 import { HeatmapLegend } from '../components/faq/HeatmapLegend';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useFAQTranslation } from '../hooks/useFAQTranslation';
 import { computeHeatmapLevels, logActivity } from '../services/engagement';
 import { getBookmarks } from '../services/bookmarks';
 import { AnalyticsDashboard } from '../components/faq/AnalyticsDashboard';
+import { useTranslation } from "../hooks/useTranslation";
 import faqData from '../data/faqs.json';
+import { FAQ_TRANSLATIONS } from "../data/faqTranslations";
 import type { FAQ, FAQDataset } from '../types';
+
+
+
+
+
+
 
 const data = faqData as FAQDataset;
 
 export default function FAQPage() {
   const { language, setIsTranslating, isTranslating } = useLanguage();
+  const t = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -63,8 +71,44 @@ export default function FAQPage() {
     }
     return result;
   }, [allFaqs, selectedCategory, search, showBookmarksOnly, bookmarks]);
+  
+  const groupedFaqs = useMemo(() => {
+  return data.categories.map((category) => ({
+    ...category,
+    faqs: filteredFaqs.filter(
+      (faq) => faq.categoryId === category.id
+    ),
+  }));
+ }, [filteredFaqs]);
 
-  const translations = useFAQTranslation(filteredFaqs, language, setIsTranslating);
+  const translatedCategoryName = (category: any) => {
+  if (language === "en") return category.name;
+
+  return (
+    FAQ_TRANSLATIONS[
+      language as keyof typeof FAQ_TRANSLATIONS
+    ]?.categories?.[category.id] ?? category.name
+  );
+};
+
+  const translatedFAQ = (faq: FAQ) => {
+  if (language === "en") {
+    return {
+      question: faq.question,
+      answer: faq.answer,
+    };
+  }
+  const translation =
+    FAQ_TRANSLATIONS[
+      language as keyof typeof FAQ_TRANSLATIONS
+    ]?.faqs?.[faq.id];
+
+  return {
+    question: translation?.question ?? faq.question,
+    answer: translation?.answer ?? faq.answer,
+  };
+}; 
+ 
 
   const heatmapLevels = useMemo(
     () => computeHeatmapLevels(allFaqs.map((f) => f.id)),
@@ -102,7 +146,7 @@ export default function FAQPage() {
           className="mb-8"
         >
           <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
-            Frequently Asked Questions
+            {t.faqTitle}
           </h1>
           <p className="mt-2 text-sm text-white/40">
             Vicharanashala Internship — {data.totalCount} questions across{' '}
@@ -126,7 +170,7 @@ export default function FAQPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search questions, answers, or categories…"
+              placeholder={t.searchPlaceholder}
               className="glass h-14 w-full rounded-2xl pr-12 pl-12 text-white placeholder:text-white/25 focus:ring-2 focus:ring-white/20 focus:outline-none"
             />
             {search && (
@@ -162,7 +206,7 @@ export default function FAQPage() {
               onClick={() => setIsAnalyticsOpen(true)}
               className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/40 transition-colors border border-transparent hover:bg-white/5 hover:text-white cursor-pointer"
             >
-              <BarChart3 size={14} /> Analytics
+              <BarChart3 size={14} /> {t.analytics}
             </button>
             <button
               onClick={() => setShowBookmarksOnly((prev) => !prev)}
@@ -173,19 +217,19 @@ export default function FAQPage() {
               }`}
             >
               <Star size={14} className={showBookmarksOnly ? 'fill-yellow-400' : ''} />
-              Bookmarked ({bookmarks.length})
+              {t.bookmarks} ({bookmarks.length})
             </button>
             <button
               onClick={expandAll}
               className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/5 hover:text-white"
             >
-              <ChevronDown size={14} /> Expand all
+              <ChevronDown size={14} /> {t.expandAll}
             </button>
             <button
               onClick={collapseAll}
               className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/40 transition-colors hover:bg-white/5 hover:text-white"
             >
-              <ChevronUp size={14} /> Collapse all
+              <ChevronUp size={14} /> {t.collapseAll}
             </button>
           </div>
         </div>
@@ -193,44 +237,46 @@ export default function FAQPage() {
         {/* Translation loading */}
         {isTranslating && (
           <div className="mb-4 flex justify-center">
-            <LoadingSpinner label="Translating content…" />
+            <LoadingSpinner label={t.translatingContent} />
           </div>
         )}
 
         {/* Results count */}
         <p className="mb-4 text-sm text-white/30">
-          Showing {filteredFaqs.length} of {allFaqs.length} questions
+          {t.showing} {filteredFaqs.length} {t.questions}
           {search && ` for "${search}"`}
-        </p>
+         </p>
 
         {/* FAQ List */}
+        <div className="space-y-10">
+  {groupedFaqs.map((category, index) => {
+    if (category.faqs.length === 0) return null;
+
+    return (
+      <div key={category.id}>
+        <h2 className="mb-4 text-2xl font-semibold text-white">
+          {index + 1}. {translatedCategoryName(category)}
+        </h2>
+
         <div className="space-y-3">
-          {filteredFaqs.map((faq) => {
-            const translated = translations[faq.id];
-            return (
-              <FAQCard
-                key={faq.id}
-                faq={faq}
-                question={translated?.question ?? faq.question}
-                answer={translated?.answer ?? faq.answer}
-                heatmapLevel={heatmapLevels[faq.id] ?? 'green'}
-                isExpanded={expandedIds.has(faq.id)}
-                onToggle={() => toggleExpand(faq.id)}
-                onBookmarkToggle={() => {
-                  const currentBookmarks = getBookmarks();
-                  const added = currentBookmarks.length > bookmarks.length;
-                  const faqItem = allFaqs.find((f) => f.id === faq.id);
-                  if (faqItem) {
-                    logActivity(
-                      added ? 'bookmark_add' : 'bookmark_remove',
-                      `${added ? 'Bookmarked' : 'Unbookmarked'} FAQ ${faqItem.number}: "${faqItem.question.substring(0, 35)}..."`
-                    );
-                  }
-                  setBookmarks(currentBookmarks);
-                }}
-              />
-            );
-          })}
+          {category.faqs.map((faq) => (
+            <FAQCard
+              key={faq.id}
+              faq={faq}
+              question={translatedFAQ(faq).question}
+              answer={translatedFAQ(faq).answer}
+              heatmapLevel={heatmapLevels[faq.id] ?? "green"}
+              isExpanded={expandedIds.has(faq.id)}
+              onToggle={() => toggleExpand(faq.id)}
+              onBookmarkToggle={() => {
+                setBookmarks(getBookmarks());
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  })}
         </div>
 
         {filteredFaqs.length === 0 && (
@@ -239,9 +285,9 @@ export default function FAQPage() {
             animate={{ opacity: 1 }}
             className="py-16 text-center"
           >
-            <p className="text-lg text-white/40">No matching FAQs found.</p>
+            <p className="text-lg text-white/40">{t.noResults}</p>
             <p className="mt-2 text-sm text-white/25">
-              Try a different search term or browse all categories.
+              {t.tryDifferentSearch}
             </p>
           </motion.div>
         )}
