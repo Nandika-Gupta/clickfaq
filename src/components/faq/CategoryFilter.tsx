@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import type { FAQCategory } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { FAQ_TRANSLATIONS } from '../../data/faqTranslations';
 
 interface CategoryFilterProps {
   categories: FAQCategory[];
@@ -12,6 +14,7 @@ export function CategoryFilter({
   selected,
   onSelect,
 }: CategoryFilterProps) {
+  const { language } = useLanguage();
   return (
     <div className="flex flex-wrap gap-2">
       <motion.button
@@ -27,17 +30,19 @@ export function CategoryFilter({
       </motion.button>
       {categories.map((cat) => (
         <motion.button
-          key={cat.id}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => onSelect(cat.id)}
-          className={`rounded-xl px-4 py-2 text-xs font-medium transition-colors sm:text-sm ${
-            selected === cat.id
-              ? 'bg-white text-black'
-              : 'bg-brand-gray text-white/60 hover:bg-white/10 hover:text-white'
-          }`}
-        >
-          {cat.name} ({cat.questions.length})
-        </motion.button>
+  key={cat.id}
+  whileTap={{ scale: 0.97 }}
+  onClick={() => onSelect(cat.id)}
+  className={`rounded-xl px-4 py-2 text-xs font-medium transition-colors sm:text-sm ${
+    selected === cat.id
+      ? 'bg-white text-black'
+      : 'bg-brand-gray text-white/60 hover:bg-white/10 hover:text-white'
+  }`}
+>
+      {FAQ_TRANSLATIONS[language]?.categories?.[cat.id] ?? cat.name}
+  {' '}
+  ({cat.questions.length})
+</motion.button>
       ))}
     </div>
   );
